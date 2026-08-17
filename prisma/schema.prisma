@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String     @id @default(cuid())
+  email           String     @unique
+  passwordHash    String
+  name            String
+  companyName     String
+  phone           String     @default("")
+  whatsapp        String     @default("")
+  cnpj            String     @default("")
+  address         String     @default("")
+  trade           String     @default("Outro")
+  logoUrl         String     @default("")
+  plan            String     @default("free")
+  quoteCounter    Int        @default(1041)
+  quotesThisMonth Int        @default(0)
+  monthKey        String     @default("")
+  validityDays    Int        @default(7)
+  followUpDay0    String     @default("Olá {cliente}! Seu orçamento para {servico} foi enviado.\n\nQualquer dúvida estou à disposição.")
+  followUpDay2    String     @default("Oi {cliente}! Conseguiu analisar o orçamento que te enviei?")
+  followUpDay5    String     @default("Olá {cliente}! Só passando para saber se ainda tem interesse em {servico}. Posso ajustar o orçamento se necessário.")
+  stripeCustomerId     String    @default("")
+  stripeSubscriptionId String    @default("")
+  planStatus           String    @default("active")
+  planPeriodEnd        DateTime?
+  pixKey               String    @default("")
+  pixKeyType           String    @default("email")
+  pixName              String    @default("")
+  pixCity              String    @default("Sao Paulo")
+  mpReceiveToken       String    @default("")
+  role            String     @default("user")
+  blockedAt       DateTime?
+  createdAt       DateTime   @default(now())
+  customers       Customer[]
+  quotes          Quote[]
+  payments        Payment[]
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  phone     String   @default("")
+  email     String   @default("")
+  address   String   @default("")
+  notes     String   @default("")
+  createdAt DateTime @default(now())
+  quotes    Quote[]
+}
+
+model Quote {
+  id            String     @id @default(cuid())
+  userId        String
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customerId    String
+  customer      Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  number        Int
+  publicToken   String     @unique
+  title         String
+  notes         String     @default("")
+  itemsJson     String
+  discountType  String     @default("none")
+  discountValue Float      @default(0)
+  subtotal      Float
+  total         Float
+  validUntil    DateTime
+  status        String     @default("draft")
+  sentAt        DateTime?
+  viewedAt      DateTime?
+  acceptedAt    DateTime?
+  paymentStatus String     @default("unpaid")
+  paidAt        DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  followUps     FollowUp[]
+  payments      Payment[]
+}
+
+model FollowUp {
+  id           String    @id @default(cuid())
+  quoteId      String
+  quote        Quote     @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  dayOffset    Int
+  scheduledFor DateTime
+  message      String
+  status       String    @default("pending")
+  sentAt       DateTime?
+  createdAt    DateTime  @default(now())
+}
+
+model Payment {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quoteId          String?
+  quote            Quote?    @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  kind             String
+  provider         String
+  status           String    @default("pending")
+  plan             String    @default("")
+  amount           Float
+  currency         String    @default("BRL")
+  stripeSessionId  String    @default("")
+  stripePaymentId  String    @default("")
+  pixPayload       String    @default("")
+  pixTxid          String    @default("")
+  paidAt           DateTime?
+  createdAt        DateTime  @default(now())
+}

@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  background: #f4efe4;
+  color: #141c18;
+}
+
+body {
+  font-family: Outfit, system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+.paper-grid {
+  background-image:
+    radial-gradient(rgba(11, 95, 75, 0.06) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+.ticket {
+  background:
+    linear-gradient(#fbf7f0, #fbf7f0) padding-box,
+    repeating-linear-gradient(
+      -45deg,
+      #0b5f4b 0 8px,
+      #d4511a 8px 16px
+    ) border-box;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition;
+  }
+  .btn-primary {
+    @apply btn bg-ember text-white shadow-card hover:bg-ember-dark;
+  }
+  .btn-forest {
+    @apply btn bg-forest text-white hover:bg-forest-dark;
+  }
+  .btn-ghost {
+    @apply btn border border-ink/10 bg-white/70 hover:bg-white;
+  }
+  .field {
+    @apply w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 text-sm outline-none ring-forest/20 placeholder:text-mute/70 focus:border-forest focus:ring-2;
+  }
+  .label {
+    @apply mb-1.5 block text-xs font-medium uppercase tracking-[0.14em] text-mute;
+  }
+  .card {
+    @apply rounded-3xl border border-ink/5 bg-cream shadow-card;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: white;
+  }
+}
