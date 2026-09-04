@@ -8,11 +8,24 @@ import { TRADES } from "@/lib/format";
 
 function RegisterForm() {
   const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
   const plan = useSearchParams().get("plan") || "";
 
   async function onSubmit(formData: FormData) {
-    const res = await registerAction(formData);
-    if (res?.error) setError(res.error);
+    setError("");
+    setPending(true);
+    try {
+      const res = await registerAction(formData);
+      if (res?.error) {
+        setError(res.error);
+        return;
+      }
+      if (res?.ok) window.location.assign(res.next);
+    } catch {
+      setError("Não foi possível criar a conta. Tente de novo.");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -58,7 +71,9 @@ function RegisterForm() {
             <input name="password" type="password" minLength={6} required className="field" />
           </div>
           {error && <p className="text-sm text-rose-700">{error}</p>}
-          <button className="btn-primary w-full">{plan ? "Criar conta e pagar" : "Criar conta"}</button>
+          <button className="btn-primary w-full" disabled={pending}>
+            {pending ? "Criando..." : plan ? "Criar conta e pagar" : "Criar conta"}
+          </button>
         </form>
         <p className="mt-4 text-sm text-mute">
           Já tem conta?{" "}

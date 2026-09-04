@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: orcaflow
+      POSTGRES_PASSWORD: orcaflow
+      POSTGRES_DB: orcaflow
+    ports:
+      - "5433:5432"
+    volumes:
+      - orcaflow_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orcaflow -d orcaflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  orcaflow_pg:

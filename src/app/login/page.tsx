@@ -7,12 +7,26 @@ import { loginAction, loginDemoAction } from "../actions";
 
 function LoginForm() {
   const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
   const next = useSearchParams().get("next") || "/dashboard";
   const blocked = useSearchParams().get("blocked");
+  const demoMissing = useSearchParams().get("error") === "demo";
 
   async function onSubmit(formData: FormData) {
-    const res = await loginAction(formData);
-    if (res?.error) setError(res.error);
+    setError("");
+    setPending(true);
+    try {
+      const res = await loginAction(formData);
+      if (res?.error) {
+        setError(res.error);
+        return;
+      }
+      if (res?.ok) window.location.assign(res.next);
+    } catch {
+      setError("Não foi possível entrar agora. Tente de novo.");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -44,8 +58,13 @@ function LoginForm() {
             {blocked ? (
               <p className="text-sm text-rose-700">Esta conta foi bloqueada. Fale com o suporte.</p>
             ) : null}
+            {demoMissing ? (
+              <p className="text-sm text-rose-700">A conta demo ainda não existe. Rode npm run setup.</p>
+            ) : null}
             {error && <p className="text-sm text-rose-700">{error}</p>}
-            <button className="btn-primary w-full">Entrar</button>
+            <button className="btn-primary w-full" disabled={pending}>
+              {pending ? "Entrando..." : "Entrar"}
+            </button>
           </form>
           <form action={loginDemoAction} className="mt-3">
             <button className="btn-ghost w-full">Abrir conta demo</button>

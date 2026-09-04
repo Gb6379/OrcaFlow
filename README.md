@@ -8,7 +8,7 @@ The product is not “AI software”. It is: **stop losing customers because you
 
 - Next.js 14 (App Router) + TypeScript
 - Tailwind CSS
-- Prisma + SQLite
+- Prisma + PostgreSQL (Neon in production, Docker locally)
 - Cookie sessions (jose + bcryptjs)
 - Optional OpenAI for quote parsing (`OPENAI_API_KEY`)
 - Heuristic Portuguese parser + Chrome voice dictation when no API key is set
@@ -20,6 +20,10 @@ npm install
 npm run setup
 npm run dev
 ```
+
+The app expects Postgres. Local `.env` should set `DATABASE_URL` (pooled) and `DIRECT_URL` (direct). Optional: `docker compose up -d` and use the URLs in `.env.example`.
+
+On Vercel, add the same two variables in Project Settings → Environment Variables, then redeploy. `prisma migrate deploy` runs during `npm run build`.
 
 Open [http://localhost:3000](http://localhost:3000).
 
@@ -66,10 +70,14 @@ The owner confirms in **Pagamentos**.
 
 See `.env.example`.
 
-- `DATABASE_URL` — SQLite file
+- `DATABASE_URL` — Postgres connection string (pooled / pooler URL on Neon)
+- `DIRECT_URL` — Postgres direct URL for migrations (same as `DATABASE_URL` on local Docker)
 - `AUTH_SECRET` — JWT secret
 - `APP_URL` — public quote links (default `http://localhost:3000`)
 - `OPENAI_API_KEY` — optional; without it, the built-in Portuguese parser still works
 - `MP_ACCESS_TOKEN` — Mercado Pago production Access Token (`APP_USR-…`), or paste it in Configurações
 - `STRIPE_SECRET_KEY` — optional Stripe secret
 - `STRIPE_WEBHOOK_SECRET` — Stripe webhook signing secret
+- `ADMIN_EMAILS` — comma-separated emails that get admin access
+
+A hosted Neon database is already wired in local `.env`. **Claim it within 72 hours** (link saved as `POSTGRES_CLAIM_URL`) so it does not expire. Then paste `DATABASE_URL` and `DIRECT_URL` into Vercel.

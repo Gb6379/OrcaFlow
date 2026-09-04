@@ -59,54 +59,73 @@ export async function registerAction(formData: FormData) {
   });
   if (!parsed.success) return { error: "Preencha os campos obrigatórios corretamente." };
 
-  const exists = await prisma.user.findUnique({ where: { email: parsed.data.email.toLowerCase() } });
-  if (exists) return { error: "Já existe uma conta com este e-mail." };
+  try {
+    const exists = await prisma.user.findUnique({ where: { email: parsed.data.email.toLowerCase() } });
+    if (exists) return { error: "Já existe uma conta com este e-mail." };
 
-  const user = await prisma.user.create({
-    data: {
-      name: parsed.data.name,
-      email: parsed.data.email.toLowerCase(),
-      passwordHash: await bcrypt.hash(parsed.data.password, 10),
-      companyName: parsed.data.companyName,
-      trade: parsed.data.trade,
-      phone: parsed.data.phone || "",
-      whatsapp: parsed.data.phone || "",
-      pixKey: parsed.data.phone || parsed.data.email.toLowerCase(),
-      pixKeyType: parsed.data.phone ? "phone" : "email",
-      pixName: parsed.data.companyName,
-      monthKey: currentMonthKey(),
-      plan: ["starter", "pro", "business"].includes(String(formData.get("plan") || ""))
-        ? String(formData.get("plan"))
-        : "free",
-      quotesThisMonth: 0,
-    },
-  });
-  await createSession(user);
+    const user = await prisma.user.create({
+      data: {
+        name: parsed.data.name,
+        email: parsed.data.email.toLowerCase(),
+        passwordHash: await bcrypt.hash(parsed.data.password, 10),
+        companyName: parsed.data.companyName,
+        trade: parsed.data.trade,
+        phone: parsed.data.phone || "",
+        whatsapp: parsed.data.phone || "",
+        pixKey: parsed.data.phone || parsed.data.email.toLowerCase(),
+        pixKeyType: parsed.data.phone ? "phone" : "email",
+        pixName: parsed.data.companyName,
+        monthKey: currentMonthKey(),
+        plan: ["starter", "pro", "business"].includes(String(formData.get("plan") || ""))
+          ? String(formData.get("plan"))
+          : "free",
+        quotesThisMonth: 0,
+      },
+    });
+    await createSession(user);
+  } catch (error) {
+    console.error("registerAction failed", error);
+    return { error: "Não foi possível criar a conta. Tente de novo." };
+  }
   const plan = String(formData.get("plan") || "");
   if (["starter", "pro", "business"].includes(plan)) {
-    redirect(`/checkout?plan=${plan}`);
+    return { ok: true as const, next: `/checkout?plan=${plan}` };
   }
-  redirect("/dashboard");
+  return { ok: true as const, next: "/dashboard" };
+}
+
+function safeNextPath(value: string) {
+  return value.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
 }
 
 export async function loginAction(formData: FormData) {
   const email = String(formData.get("email") || "").toLowerCase().trim();
   const password = String(formData.get("password") || "");
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) return { error: "E-mail ou senha inválidos." };
-  const ok = await bcrypt.compare(password, user.passwordHash);
-  if (!ok) return { error: "E-mail ou senha inválidos." };
-  if (user.blockedAt) return { error: "Esta conta foi bloqueada. Fale com o suporte." };
-  await createSession(user);
-  const next = String(formData.get("next") || "/dashboard");
-  const safe = next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
-  redirect(safe);
+  const next = safeNextPath(String(formData.get("next") || "/dashboard"));
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return { error: "E-mail ou senha inválidos." };
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!ok) return { error: "E-mail ou senha inválidos." };
+    if (user.blockedAt) return { error: "Esta conta foi bloqueada. Fale com o suporte." };
+    await createSession(user);
+    return { ok: true as const, next };
+  } catch (error) {
+    console.error("loginAction failed", error);
+    return { error: "Não foi possível entrar agora. Tente de novo." };
+  }
 }
 
 export async function loginDemoAction() {
-  const user = await prisma.user.findUnique({ where: { email: "demo@orcaflow.com.br" } });
+  let user;
+  try {
+    user = await prisma.user.findUnique({ where: { email: "demo@orcaflow.com.br" } });
+    if (user) await createSession(user);
+  } catch (error) {
+    console.error("loginDemoAction failed", error);
+    redirect("/login?error=demo");
+  }
   if (!user) redirect("/login?error=demo");
-  await createSession(user);
   redirect("/dashboard");
 }
 

@@ -9,7 +9,8 @@ export { verifySessionToken };
 
 export async function createSession(user: { id: string; email: string }) {
   const token = await signSession(user);
-  cookies().set(SESSION_COOKIE, token, {
+  const jar = await cookies();
+  jar.set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -19,11 +20,13 @@ export async function createSession(user: { id: string; email: string }) {
 }
 
 export async function destroySession() {
-  cookies().set(SESSION_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
+  const jar = await cookies();
+  jar.set(SESSION_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
 }
 
 export async function readSession(): Promise<Session | null> {
-  return verifySessionToken(cookies().get(SESSION_COOKIE)?.value);
+  const jar = await cookies();
+  return verifySessionToken(jar.get(SESSION_COOKIE)?.value);
 }
 
 export async function getCurrentUser(): Promise<User | null> {

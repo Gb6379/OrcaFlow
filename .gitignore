@@ -1,7 +1,10 @@
 node_modules
 .next
 out
-.env
+/.env
+/.env.local
+/.env.production.local
+.env.neon.json
 *.db
 *.db-journal
 prisma/dev.db
